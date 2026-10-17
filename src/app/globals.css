@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+/* ───────────── TABLE.MN дизайн систем ───────────── */
+@theme {
+  --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-literata), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  /* Өнгө: дулаан цагаан, хар, нүүрсэн саарал, чулуун саарал, зөөлөн шаргал, нэг гол өнгө */
+  --color-paper: #f6f3ee;
+  --color-surface: #fdfcfa;
+  --color-sand: #efe9df;
+  --color-beige: #e7dfd2;
+  --color-line: #e3dcd0;
+  --color-line-strong: #cfc6b7;
+  --color-ink: #161513;
+  --color-charcoal: #2b2926;
+  --color-stone: #6d675e;
+  --color-stone-light: #9a9388;
+
+  --color-ember: #b4532a;
+  --color-ember-dark: #8f3f1e;
+  --color-ember-soft: #f4e5db;
+
+  --color-success: #2f6b4f;
+  --color-success-soft: #e1ede5;
+  --color-warning: #9a6312;
+  --color-warning-soft: #f5ead3;
+  --color-danger: #a3352b;
+  --color-danger-soft: #f5dfdb;
+  --color-info: #2f5877;
+  --color-info-soft: #dfe8ef;
+
+  /* Гал тогооны харанхуй дэлгэц */
+  --color-kds-bg: #11100f;
+  --color-kds-panel: #1a1917;
+  --color-kds-card: #23211e;
+  --color-kds-line: #34312c;
+  --color-kds-text: #f3efe8;
+  --color-kds-muted: #a19a8f;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-soft: 0 1px 2px rgb(22 21 19 / 0.05), 0 2px 8px rgb(22 21 19 / 0.04);
+  --shadow-raised: 0 1px 2px rgb(22 21 19 / 0.06), 0 12px 32px -8px rgb(22 21 19 / 0.14);
+  --shadow-float: 0 2px 4px rgb(22 21 19 / 0.05), 0 32px 64px -16px rgb(22 21 19 / 0.22);
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+
+  --animate-fade-in: fade-in 0.3s var(--ease-out-quart) both;
+  --animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    background: var(--color-ember-soft);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ember);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  button, [role="button"] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.4; }
+}
+
+@layer utilities {
+  .tabular { font-variant-numeric: tabular-nums; }
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .paper-grain {
+    background-image: radial-gradient(rgb(22 21 19 / 0.035) 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+  .hairline-grid {
+    background-image:
+      linear-gradient(to right, rgb(22 21 19 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(22 21 19 / 0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}

@@ -1,0 +1,459 @@
+// TABLE.MN өгөгдлийн сангийн бүтэц
+// Мөнгөн дүнг төгрөгөөр, бүхэл тоогоор (Int) хадгална.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  OWNER
+  ADMIN
+}
+
+enum StaffRole {
+  OWNER
+  MANAGER
+  WAITER
+  KITCHEN
+  CASHIER
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum TableStatus {
+  FREE
+  RESERVED
+  SEATED
+  ORDERED
+  AWAITING_PAYMENT
+}
+
+enum TableShape {
+  ROUND
+  SQUARE
+  RECT
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  ARRIVED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  QPAY
+  SOCIALPAY
+  DEMO
+}
+
+enum QRCodeType {
+  RESTAURANT
+  TABLE
+}
+
+enum OptionKind {
+  OPTION
+  ADDON
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  phone        String?
+  passwordHash String
+  role         UserRole  @default(CUSTOMER)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions     Session[]
+  resetTokens  PasswordResetToken[]
+  staff        RestaurantStaff[]
+  customers    Customer[]
+  orders       Order[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Restaurant {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  name              String
+  tagline           String?
+  description       String?
+  address           String?
+  district          String?
+  phone             String?
+  email             String?
+  // [{ day: 0-6, open: "08:00", close: "22:00", closed: false }]
+  openingHours      Json
+  brandColor        String   @default("#B4532A")
+  logoText          String?
+  logoUrl           String?
+  currency          String   @default("MNT")
+  timezone          String   @default("Asia/Ulaanbaatar")
+  serviceFeePercent Int      @default(0)
+  deliveryFee       Int      @default(0)
+  allowDineIn       Boolean  @default(true)
+  allowTakeaway     Boolean  @default(true)
+  allowDelivery     Boolean  @default(false)
+  acceptingOrders   Boolean  @default(true)
+  orderSeq          Int      @default(100)
+  isDemo            Boolean  @default(false)
+  onboardingStep    Int      @default(0)
+  demoSimulatedAt   DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  staff        RestaurantStaff[]
+  menus        Menu[]
+  categories   MenuCategory[]
+  items        MenuItem[]
+  tables       Table[]
+  orders       Order[]
+  reservations Reservation[]
+  customers    Customer[]
+  reviews      Review[]
+  qrCodes      QRCode[]
+  payments     Payment[]
+  analytics    Analytics[]
+  images       Image[]
+}
+
+model RestaurantStaff {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         StaffRole  @default(WAITER)
+  createdAt    DateTime   @default(now())
+
+  @@unique([restaurantId, userId])
+  @@index([userId])
+}
+
+model Menu {
+  id           String         @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  categories   MenuCategory[]
+
+  @@index([restaurantId])
+}
+
+model MenuCategory {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuId       String
+  menu         Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  position     Int        @default(0)
+  isVisible    Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  items        MenuItem[]
+
+  @@index([restaurantId, position])
+}
+
+model MenuItem {
+  id           String           @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     MenuCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  price        Int
+  imageUrl     String?
+  // Зураггүй үед ашиглах чимэглэлийн төрөл (buuz, soup, noodle гэх мэт)
+  artKey       String?
+  ingredients  String[]         @default([])
+  isAvailable  Boolean          @default(true)
+  isPopular    Boolean          @default(false)
+  isFeatured   Boolean          @default(false)
+  position     Int              @default(0)
+  prepMinutes  Int              @default(10)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  options      MenuItemOption[]
+  orderItems   OrderItem[]
+
+  @@index([restaurantId, categoryId, position])
+}
+
+model MenuItemOption {
+  id         String     @id @default(cuid())
+  itemId     String
+  item       MenuItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  kind       OptionKind @default(OPTION)
+  // Нэг бүлэг доторх сонголтоос зөвхөн нэгийг сонгоно (жишээ нь "Хэмжээ")
+  groupName  String?
+  name       String
+  priceDelta Int        @default(0)
+  isDefault  Boolean    @default(false)
+  position   Int        @default(0)
+
+  @@index([itemId])
+}
+
+model Table {
+  id           String        @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  number       Int
+  seats        Int           @default(4)
+  zone         String        @default("Үндсэн танхим")
+  shape        TableShape    @default(SQUARE)
+  posX         Int           @default(0)
+  posY         Int           @default(0)
+  status       TableStatus   @default(FREE)
+  occupiedAt   DateTime?
+  guestName    String?
+  createdAt    DateTime      @default(now())
+  orders       Order[]
+  reservations Reservation[]
+  qrCodes      QRCode[]
+
+  @@unique([restaurantId, number])
+}
+
+model Customer {
+  id           String        @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name         String
+  phone        String
+  email        String?
+  notes        String?
+  visits       Int           @default(0)
+  totalSpent   Int           @default(0)
+  lastVisitAt  DateTime?
+  createdAt    DateTime      @default(now())
+  orders       Order[]
+  reservations Reservation[]
+  reviews      Review[]
+
+  @@unique([restaurantId, phone])
+  @@index([restaurantId, totalSpent])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  restaurantId    String
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  number          Int
+  publicToken     String      @unique
+  type            OrderType   @default(DINE_IN)
+  status          OrderStatus @default(NEW)
+  tableId         String?
+  table           Table?      @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customerName    String?
+  customerPhone   String?
+  deliveryAddress String?
+  note            String?
+  subtotal        Int
+  serviceFee      Int         @default(0)
+  deliveryFee     Int         @default(0)
+  total           Int
+  isPaid          Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  confirmedAt     DateTime?
+  startedAt       DateTime?
+  readyAt         DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
+  cancelReason    String?
+  updatedAt       DateTime    @updatedAt
+  items           OrderItem[]
+  payments        Payment[]
+  reviews         Review[]
+
+  @@unique([restaurantId, number])
+  @@index([restaurantId, status])
+  @@index([restaurantId, createdAt])
+  @@index([tableId])
+}
+
+model OrderItem {
+  id         String    @id @default(cuid())
+  orderId    String
+  order      Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String?
+  menuItem   MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  // Захиалга өгөх үеийн нэр, үнийг хадгална (дараа нь меню өөрчлөгдсөн ч түүх хэвээр)
+  name       String
+  unitPrice  Int
+  quantity   Int
+  // [{ name, priceDelta, kind }]
+  options    Json      @default("[]")
+  removed    String[]  @default([])
+  note       String?
+  lineTotal  Int
+
+  @@index([orderId])
+  @@index([menuItemId])
+}
+
+model Reservation {
+  id           String            @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  customerId   String?
+  customer     Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  tableId      String?
+  table        Table?            @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  name         String
+  phone        String
+  partySize    Int
+  startsAt     DateTime
+  durationMin  Int               @default(90)
+  status       ReservationStatus @default(PENDING)
+  note         String?
+  source       String            @default("staff")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([restaurantId, startsAt])
+}
+
+model Review {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  customerId   String?
+  customer     Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  orderId      String?
+  order        Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  rating       Int
+  comment      String?
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId, createdAt])
+}
+
+model QRCode {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tableId      String?
+  table        Table?     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  type         QRCodeType
+  code         String     @unique
+  scans        Int        @default(0)
+  lastScanAt   DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId])
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderId      String
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount       Int
+  method       PaymentMethod
+  status       PaymentStatus @default(PENDING)
+  provider     String
+  providerRef  String?
+  paidAt       DateTime?
+  createdAt    DateTime      @default(now())
+
+  @@index([restaurantId, createdAt])
+  @@index([orderId])
+}
+
+// Өдөр тутмын нэгтгэсэн борлуулалт (Улаанбаатарын цагаар)
+model Analytics {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  date         DateTime   @db.Date
+  revenue      Int        @default(0)
+  orders       Int        @default(0)
+  cancelled    Int        @default(0)
+  avgOrder     Int        @default(0)
+  dineIn       Int        @default(0)
+  takeaway     Int        @default(0)
+  delivery     Int        @default(0)
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([restaurantId, date])
+}
+
+model Image {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  mime         String
+  width        Int
+  height       Int
+  bytes        Bytes
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId])
+}
