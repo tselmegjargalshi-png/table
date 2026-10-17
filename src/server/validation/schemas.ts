@@ -208,3 +208,14 @@ export const onboardingTablesSchema = z.object({
   count: z.number().int().min(0).max(120),
   seats: z.number().int().min(1).max(20).default(4),
 });
+
+export const contactSchema = z.object({
+  name: z.string().trim().min(2, "Нэрээ оруулна уу.").max(80),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^[+\d][\d\s-]{6,19}$/, "Утасны дугаараа зөв оруулна уу."),
+  email: z.string().trim().email("Имэйл хаягаа зөв оруулна уу.").max(120).optional().or(z.literal("").transform(() => undefined)),
+  restaurant: z.string().trim().max(120).optional(),
+  message: z.string().trim().max(1000).optional(),
+});

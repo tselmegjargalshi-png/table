@@ -457,3 +457,15 @@ model Image {
 
   @@index([restaurantId])
 }
+
+model ContactRequest {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  email        String?
+  restaurant   String?
+  message      String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+}

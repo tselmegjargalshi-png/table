@@ -102,8 +102,8 @@ export async function getDashboardData(restaurantId: string) {
   const insights: string[] = [];
   const change = percentChange(todayRevenue, yesterdayRevenue);
   if (change !== null && yesterdayRevenue > 0) {
-    if (change > 0) insights.push(`Өнөөдрийн борлуулалт өчигдрийн энэ цагаас ${change}% өссөн.`);
-    else if (change < 0) insights.push(`Өнөөдрийн борлуулалт өчигдрийн энэ цагаас ${Math.abs(change)}% буурсан.`);
+    if (change > 0) insights.push(`Өнөөдрийн борлуулалт өчигдрийн ижил цагийнхаас ${change}% өссөн.`);
+    else if (change < 0) insights.push(`Өнөөдрийн борлуулалт өчигдрийн ижил цагийнхаас ${Math.abs(change)}% буурсан.`);
     else insights.push("Өнөөдрийн борлуулалт өчигдрийн энэ цагийнхтай ижил байна.");
   }
   if (topItem[0]) {

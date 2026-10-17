@@ -28,8 +28,9 @@ export const metadata: Metadata = {
     siteName: "TABLE.MN",
     title: "TABLE.MN | Рестораны бизнесийг нэг дор",
     description,
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TABLE.MN" }],
   },
-  twitter: { card: "summary_large_image", title: "TABLE.MN | Рестораны бизнесийг нэг дор", description },
+  twitter: { card: "summary_large_image", title: "TABLE.MN | Рестораны бизнесийг нэг дор", description, images: ["/og.png"] },
   alternates: { canonical: "/" },
 };
 
