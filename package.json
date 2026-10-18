@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && DATABASE_URL=\"$DIRECT_URL\" tsx --tsconfig tsconfig.json prisma/seed-if-empty.ts && next build",
+    "db:seed-if-empty": "tsx --tsconfig tsconfig.json prisma/seed-if-empty.ts",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
